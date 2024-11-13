@@ -1,0 +1,49 @@
+﻿version: '3'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2182:2181"  # Changed the external port to 2182
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - ecommerceapphost_default
+
+  kafka1:
+    image: wurstmeister/kafka
+    ports:
+      - "9093:9093"  # Adjust as needed
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka1:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_LISTENER_NAME_INTERNAL: INSIDE
+      KAFKA_LISTENER_INTERNAL: INSIDE://kafka1:9093
+      KAFKA_LISTENER_PORT_INTERNAL: 9093
+      KAFKA_LISTENER_NAME_EXTERNAL: EXTERNAL
+      KAFKA_LISTENER_EXTERNAL: EXTERNAL://localhost:9092
+      KAFKA_LISTENER_PORT_EXTERNAL: 9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_EXTERNAL: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_INTERNAL: PLAINTEXT
+      KAFKA_LISTENER_SSL_PROTOCOL: SSL
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2182  # Updated to new port 2182
+    depends_on:
+      - zookeeper
+    networks:
+      - ecommerceapphost_default
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    ports:
+      - "8080:8080"  # External port for Kafka UI
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "kafka1"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka1:9093"
+    depends_on:
+      - kafka1
+    networks:
+      - ecommerceapphost_default
+
+networks:
+  ecommerceapphost_default:
+    driver: bridge
